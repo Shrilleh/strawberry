@@ -30,38 +30,23 @@ In the examples below (step-by-step):
 samSentences = ["", "Shut up you stinky winston lover", "you are bad at siege","hi pookie","quit yapping","have sex with ryan gawenda NOW","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","",""]
 
 
-class Example(commands.Cog):
+class Gawenda(commands.Cog):
     # Class of example commands
 
     def __init__(self, bot):
         self.bot = bot
 
-    # REPLY PING TO PONG
-    @commands.command()
-    async def ping(self, ctx):
-        await ctx.send("Pong!")
-    # FOR EXAMPLE: 
-    # kitten: !ping
-    # straw: Pong!
 
-    # REPEAT WHAT USER SENDS
-    @commands.command()
-    async def say(self, ctx, *, message: str):
-        
-        await ctx.send(message)
-    # FOR EXAMPLE: 
-    # kitten: !say bro
-    # straw: bro
-
-    # FOR BOT EVENTS (i.e on_message) use @commands.Cog.listener()
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
         # Ignore bots own messages
         if message.author == self.bot.user:
             return
-        # If user messages "testbot"
-        if "testbot" in message.content.lower():
-            await message.channel.send(f"{message.author.mention} Hi, bot working!") # Mentions user, messages back
+
+        
+        if message.author.name == "bagelboi":
+         pick = random.choice(samSentences)
+        await message.channel.send(pick)
 
 async def setup(bot):
-    await bot.add_cog(Example(bot))
+    await bot.add_cog(Gawenda(bot))
