@@ -20,6 +20,9 @@ Add a .py in COMPONENTS FOLDER
 Copy example layout
 Run main.py
 
+## DISCORD PY DOCS
+https://discordpy.readthedocs.io/en/stable/
+
 ## FOR GIT
 # DO NOT PUSH TO MAIN (until fully tested)
 
