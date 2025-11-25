@@ -39,3 +39,4 @@ terraform.rc
 
 #DISCORD SPECIFIC
 *.log
+*.env

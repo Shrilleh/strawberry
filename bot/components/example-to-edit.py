@@ -10,21 +10,20 @@ class Fun(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    # REPLY PING TO PONG
+    # REPLY DING TO DONG
     @commands.command()
-    async def ping(self, ctx):
-        await ctx.send("Pong!")
+    async def ding(self, ctx):
+        await ctx.send("Dong!")
     # FOR EXAMPLE: 
-    # kitten: !ping
-    # straw: Pong!
+    # kitten: !ding
+    # straw: Dong!
 
     # REPEAT WHAT USER SENDS
     @commands.command()
-    async def say(self, ctx, *, message: str):
-        
+    async def speak(self, ctx, *, message: str):
         await ctx.send(message)
     # FOR EXAMPLE: 
-    # kitten: !say bro
+    # kitten: !speak bro
     # straw: bro
 
 # Setup component (ensure you adding the correct class)
