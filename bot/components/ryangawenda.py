@@ -44,7 +44,7 @@ class Gawenda(commands.Cog):
             return
 
         
-        if message.author.name == "bagelboi":
+        if message.author.name == "bagelboi4000":
          pick = random.choice(samSentences)
         await message.channel.send(pick)
 
