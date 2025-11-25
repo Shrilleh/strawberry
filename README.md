@@ -16,9 +16,9 @@ pip install requirements.txt
 RUN main.py
 
 ## TO ADD A FUNCTION:
-Add a .py in COMPONENTS FOLDER
-Copy example layout
-Run main.py
+    - Add a .py in COMPONENTS FOLDER
+    - Copy example layout
+    - Run main.py
 
 ## DISCORD PY DOCS
 https://discordpy.readthedocs.io/en/stable/
@@ -34,7 +34,7 @@ git clone repo_https
 
 ### Pull main
 ```bash
-git pull origin_main
+git pull origin main
 ```
 
 If you want to create new feature
