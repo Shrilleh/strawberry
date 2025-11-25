@@ -21,7 +21,7 @@ Copy example layout
 Run main.py
 
 ## FOR GIT
-# DO NOT PUSH TO MAIN
+# DO NOT PUSH TO MAIN (until fully tested)
 
 ### To clone
 ```bash
