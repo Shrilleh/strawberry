@@ -38,4 +38,4 @@ terraform.rc
 
 
 #DISCORD SPECIFIC
-.log
+*.log
