@@ -7,7 +7,7 @@ hi
 
 ## TO INSTALL DEPENDENCIES RUN:
 ```bash
-pip install requirments.txt 
+pip install requirements.txt 
 ```
 (make sure you are in the right directory)
 
