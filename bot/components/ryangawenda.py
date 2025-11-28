@@ -43,10 +43,22 @@ class Gawenda(commands.Cog):
         if message.author == self.bot.user:
             return
 
-        
+        if message.author.name == "apricotjamx" and "true" in message.content.lower():
+            await message.add_reaction(":latruetrue:1409313961547010048")
+            
         if message.author.name == "bagelboi4000":
-         pick = random.choice(samSentences)
-        await message.channel.send(pick)
+            pick = random.choice(samSentences)
+            await message.channel.send(pick)
 
+        if message.author.name == "foggiercommando":
+            image = discord.File("./Images/olliemean.png")
+            await message.channel.send(file=image)
+    
+        if message.author.name == "apricotjamx" and "jack" in message.content.lower(): 
+             image = discord.File("./Images/jackharris_assault.png")
+             await message.channel.send(file=image)
+    
+
+           
 async def setup(bot):
     await bot.add_cog(Gawenda(bot))
