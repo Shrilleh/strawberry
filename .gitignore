@@ -54,3 +54,4 @@ ENV/
 .env.
 *.png
 *.jpg
+*.pyc
