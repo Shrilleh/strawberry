@@ -46,9 +46,9 @@ class Gawenda(commands.Cog):
         if message.author.name == "apricotjamx" and "true" in message.content.lower():
             await message.add_reaction(":latruetrue:1409313961547010048")
             
-        if message.author.name == "bagelboi4000":
-            pick = random.choice(samSentences)
-            await message.channel.send(pick)
+        # if message.author.name == "bagelboi4000":
+        #     pick = random.choice(samSentences)
+        #     await message.channel.send(pick)
 
         if message.author.name == "foggiercommando":
             image = discord.File("./Images/olliemean.png")

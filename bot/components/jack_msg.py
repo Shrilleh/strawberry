@@ -21,30 +21,48 @@ class Guess(commands.Cog):
             861282807824908298 : ['niall']
         }
 
+        self.cached_messages = []  # store preloaded messages
+        self.target_channel_id = 1212444252995592275  # FMERAL CHANNEL ID
+
+    @commands.Cog.listener()
+    async def on_ready(self):
+        await self.load_guess_messages()
+        print(f"loaded {len(self.cached_messages)} messages")
+
+    # load and cache message on start up (faster retrieval)
+    async def load_guess_messages(self):
+        channel = self.bot.get_channel(self.target_channel_id)
+        if channel is None:
+            return
+
+        cutoff = datetime.now(timezone.utc) - timedelta(days=60)
+        messages = []
+
+        async for msg in channel.history(limit=3000, after=cutoff):
+            if msg.author.bot:
+                continue
+            if not msg.content or len(msg.content.strip()) < 6:
+                continue
+            if any(ext in msg.content.lower() for ext in [".gif", ".png", ".jpg", ".jpeg", "http://", "https://"]):
+                continue
+            
+            messages.append(msg)
+
+        self.cached_messages = messages
+
 
     @commands.command()
     async def guessmsg(self, ctx):
-
         # make sure same channel
         if not isinstance(ctx.channel, discord.TextChannel):
             return
-
-        # get date cutoff (30 days rn)
-        cutoff = datetime.now(timezone.utc) - timedelta(days=30)
-
-        # get message history (currently only in current channel - quicker ways to do this (i.e load messages on bot start))
-        async for msg in ctx.channel.history(limit=1000, after=cutoff):
-            if msg.author.bot: # don't include bot msg
-                continue
-            if not msg.content or len(msg.content.strip()) < 5: # only real/longer message 
-                continue
-            self.messages.append(msg)
-
-        if not self.messages:
+        if not self.cached_messages:
+            await self.load_guess_messages()  # fallback if not loaded yet
+        if not self.cached_messages:
             return
 
-        # get rando message, and its author
-        target_msg = random.choice(self.messages)
+        # get random message from cached messages
+        target_msg = random.choice(self.cached_messages)
         target_author = target_msg.author
 
         await ctx.send(
@@ -93,6 +111,59 @@ class Guess(commands.Cog):
             await ctx.send(f"correct: **{target_author.display_name}**") # right answer
         else:
             await ctx.send(f"nope answer was: **{target_author.display_name}**") # if answer wrong
+    
+    @commands.command()
+    async def guessword(self, ctx):
+        if not self.cached_messages:
+            await self.load_guess_messages()  # fallback if not loaded yet
+
+        if not self.cached_messages:
+            return
+
+        # get random message
+        target_msg = random.choice(self.cached_messages)
+        target_author = target_msg.author
+        words = target_msg.content.split() # get words in message
+
+        # pick a random word and hide it
+        hidden_index = random.randrange(len(words))
+        hidden_word = words[hidden_index]
+        masked_words = words.copy()
+        masked_words[hidden_index] = "_" * len(hidden_word) # make it _ the length of the word
+
+        await ctx.send(
+            "fill in the blank:\n"
+            f"```{' '.join(masked_words)}```"
+        )
+
+        def check(msg):
+            return msg.author == ctx.author and msg.channel == ctx.channel
+
+        try:
+            guess_msg = await self.bot.wait_for("message", timeout=15.0, check=check)
+        except asyncio.TimeoutError:
+            await ctx.send(
+                f"it was **{hidden_word}** "
+                f"by **{target_author.display_name}**"
+            )
+            return
+
+        # what the user guesses vs real word
+        guess_text = guess_msg.content.strip().lower()
+        real_word = hidden_word.lower()
+
+        # if guess right vs wrong
+        if guess_text == real_word:
+            await ctx.send(
+                f"correct: **{target_author.display_name}** said:\n"
+                f"```{target_msg.content}```"
+            )
+        else:
+            await ctx.send(
+                f"it was **{hidden_word}** "
+                f"by **{target_author.display_name}**\n"
+                f"```{target_msg.content}```"
+            )
 
 async def setup(bot):
     await bot.add_cog(Guess(bot))
