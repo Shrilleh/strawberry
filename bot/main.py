@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 import os
 import asyncio
 
+
 # Get token
 load_dotenv()
 token = os.getenv("token")
@@ -16,6 +17,7 @@ handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w'
 intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
+intents.voice_states = True
 
 # INITIALIZE BOT - DEFINE PREFIX 
 bot = commands.Bot(command_prefix='!', intents=intents)
