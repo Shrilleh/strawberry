@@ -22,11 +22,33 @@ class Guess(commands.Cog):
         }
 
         self.cached_messages = []  # store preloaded messages
+        self.image_messages = []  # list of (message, image_url)
         self.target_channel_id = 1212444252995592275  # FMERAL CHANNEL ID
+
+    def guess_member(self, guild: discord.Guild, guess_text: str) -> discord.Member | None:
+        guess_text = guess_text.strip().lower()
+        if not guess_text:
+            return None
+
+        # exact username or display name match
+        for member in guild.members:
+            if member.name.lower() == guess_text or member.display_name.lower() == guess_text:
+                return member
+
+        # alias match
+        for user_id, alias_list in self.aliases.items():
+            for alias in alias_list:
+                if guess_text == alias.lower():
+                    member = guild.get_member(user_id)
+                    if member is not None:
+                        return member
+
+        return None
 
     @commands.Cog.listener()
     async def on_ready(self):
         await self.load_guess_messages()
+        await self.load_image_messages()
         print(f"loaded {len(self.cached_messages)} messages")
 
     # load and cache message on start up (faster retrieval)
@@ -35,10 +57,10 @@ class Guess(commands.Cog):
         if channel is None:
             return
 
-        cutoff = datetime.now(timezone.utc) - timedelta(days=60)
+        cutoff = datetime.now(timezone.utc) - timedelta(days=90)
         messages = []
 
-        async for msg in channel.history(limit=3000, after=cutoff):
+        async for msg in channel.history(limit=5000, after=cutoff):
             if msg.author.bot:
                 continue
             if not msg.content or len(msg.content.strip()) < 6:
@@ -49,6 +71,39 @@ class Guess(commands.Cog):
             messages.append(msg)
 
         self.cached_messages = messages
+
+    async def load_image_messages(self):
+        """Preload image messages for guessimg."""
+        channel = self.bot.get_channel(self.target_channel_id)
+        if channel is None:
+            print("[Guess] image channel not found")
+            return
+
+        cutoff = datetime.now(timezone.utc) - timedelta(days=90)
+        images = []
+
+        async for msg in channel.history(limit=2000, after=cutoff):
+            if msg.author.bot:
+                continue
+            if not msg.attachments:
+                continue
+
+            # keep only image attachments
+            image_attachments = [
+                a for a in msg.attachments
+                if (a.content_type and a.content_type.startswith("image/"))
+                or a.filename.lower().endswith((".png", ".jpg", ".jpeg", ".gif", ".webp"))
+            ]
+
+            if not image_attachments:
+                continue
+
+            # just take the first image for this message
+            images.append((msg, image_attachments[0].url))
+
+        self.image_messages = images
+        print(f"loaded {len(self.image_messages)} images (urls)")
+
 
 
     @commands.command()
@@ -77,40 +132,21 @@ class Guess(commands.Cog):
             # check for message (by person we request the !guessmsg (for now !)) TIMEOUT if NO ANSWER
             guess_msg = await self.bot.wait_for("message", timeout=15.0, check=check)
         except asyncio.TimeoutError:
-            await ctx.send(f"it was **{target_author.display_name}**")
+            await ctx.send(f"it was **{target_author.display_name}**\n"
+                           f"<{target_msg.jump_url}>")
             return
 
-        # initalized guess & get text from message
-        guessed_member = None
-        guess_text = guess_msg.content.strip().lower()
+        guessed_member = self.guess_member(ctx.guild, guess_msg.content)
 
-        # loop through members, check if user or nick name match
-        for member in ctx.guild.members:
-            if member.name.lower() == guess_text or member.display_name.lower() == guess_text:
-                guessed_member = member
-                break
-
-        # alias match (only if not discord name given)
-        if guessed_member is None:
-            for user_id, alias_list in self.aliases.items():
-                for alias in alias_list:
-                    if guess_text == alias.lower():
-                        member = ctx.guild.get_member(user_id)
-                        if member:
-                            guessed_member = member
-                        break
-                if guessed_member is not None:
-                    break
-
-        # no one guessed
         if not guessed_member:
-            return
+            return  
 
-        # if answer right
         if guessed_member.id == target_author.id:
-            await ctx.send(f"correct: **{target_author.display_name}**") # right answer
+            await ctx.send(f"correct: **{target_author.display_name}**\n"
+                           f"<{target_msg.jump_url}>")
         else:
-            await ctx.send(f"nope answer was: **{target_author.display_name}**") # if answer wrong
+            await ctx.send(f"nope answer was: **{target_author.display_name}**\n"
+                           f"<{target_msg.jump_url}>")
     
     @commands.command()
     async def guessword(self, ctx):
@@ -144,7 +180,8 @@ class Guess(commands.Cog):
         except asyncio.TimeoutError:
             await ctx.send(
                 f"it was **{hidden_word}** "
-                f"by **{target_author.display_name}**"
+                f"by **{target_author.display_name}**\n"
+                f"<{target_msg.jump_url}>"
             )
             return
 
@@ -156,14 +193,57 @@ class Guess(commands.Cog):
         if guess_text == real_word:
             await ctx.send(
                 f"correct: **{target_author.display_name}** said:\n"
-                f"```{target_msg.content}```"
+                f"```{target_msg.content}```\n"
+                f"<{target_msg.jump_url}>"
             )
         else:
             await ctx.send(
                 f"it was **{hidden_word}** "
                 f"by **{target_author.display_name}**\n"
-                f"```{target_msg.content}```"
+                f"```{target_msg.content}```\n"
+                f"<{target_msg.jump_url}>"
             )
 
+    # GUESS IMAGE
+    @commands.command()
+    async def guessimg(self, ctx):
+        # load cache if empty
+        if not self.image_messages:
+            await self.load_image_messages()
+
+        if not self.image_messages:
+            print("fail")
+            return
+
+        #random image get
+        target_msg, image_url = random.choice(self.image_messages)
+        target_author = target_msg.author
+
+        await ctx.send("who sent this image?")
+        await ctx.send(image_url)
+
+        def check(msg):
+            return msg.author == ctx.author and msg.channel == ctx.channel
+
+        try:
+            guess_msg = await self.bot.wait_for("message", timeout=15.0, check=check)
+        except asyncio.TimeoutError:
+            await ctx.send(f"it was **{target_author.display_name}**")
+            return
+
+        guessed_member = self.guess_member(ctx.guild, guess_msg.content)
+
+        if not guessed_member:
+            return
+
+         # if right or wrong
+        if guessed_member.id == target_author.id:
+            await ctx.send(f"correct: **{target_author.display_name}**\n"
+                           f"<{target_msg.jump_url}>")
+        else:
+            await ctx.send(f"nope answer was: **{target_author.display_name}**\n"
+                           f"<{target_msg.jump_url}>")
+
+    
 async def setup(bot):
     await bot.add_cog(Guess(bot))
